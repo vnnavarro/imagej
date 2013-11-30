@@ -273,6 +273,28 @@ public class CodeHacker {
 	}
 
 	/**
+	 * Inserts the ImageJ2 bridge into ImageJ1.
+	 */
+	public void injectBridgeSupport(final String fullClass) {
+		final CtClass classRef = getClass(fullClass);
+		try {
+			classRef.addField(new CtField(pool.get(Object.class.getName()), "_bridged", classRef));
+			try {
+				CtConstructor ctor = classRef.getConstructor("()V");
+				ctor.setModifiers(ctor.getModifiers() | Modifier.PUBLIC);
+			} catch (NotFoundException e) {
+				final CtConstructor ctor = CtNewConstructor.make(new CtClass[0], new CtClass[0], classRef);
+				ctor.setBody("super();");
+				classRef.addConstructor(ctor);
+			}
+		}
+		catch (final Throwable e) {
+			maybeThrow(new IllegalArgumentException("Cannot add bridge support: "
+					+ fullClass, e));
+		}
+	}
+
+	/**
 	 * Works around a bug where the horizontal scroll wheel of the mighty mouse is
 	 * mistaken for a popup trigger.
 	 */

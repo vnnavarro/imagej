@@ -31,6 +31,9 @@
 
 package imagej.legacy;
 
+import imagej.legacy.bridge.DefaultImageJ1Bridge;
+import imagej.legacy.bridge.Mapping;
+
 import java.awt.GraphicsEnvironment;
 import java.lang.reflect.Field;
 
@@ -61,6 +64,8 @@ public class LegacyInjector {
 	/** Overrides class behavior of ImageJ1 classes by injecting method hooks. */
 	protected void injectHooks(final CodeHacker hacker, boolean headless, ImageJ2Bridge bridge) {
 		// NB: Override class behavior before class loading gets too far along.
+
+		injectBridge(hacker);
 
 		if (headless) {
 			new LegacyHeadless(hacker).patch();
@@ -158,6 +163,37 @@ public class LegacyInjector {
 
 		// make sure that there is a bridge
 		hacker.setBridge(bridge);
+	}
+
+	private static void injectBridge(CodeHacker hacker) {
+		for (String className : new String[] {
+			"ij.process.ByteProcessor",
+			"ij.process.ColorProcessor",
+			"ij.process.FloatProcessor",
+			"ij.process.ShortProcessor",
+		}) {
+			hacker.injectBridgeSupport(className);
+			hacker.addToClassInitializer("ij.IJ",
+				Mapping.class.getName() + ".register(" + className + ".class);");
+			if (className.endsWith("Processor")) {
+				hacker.insertAtTopOfMethod(className,
+					"public void setPixels(java.lang.Object pixels)",
+					"if (_bridged != null) try {" +
+					"  _bridged.getClass().getMethod(\"setPixels\"," +
+					"       new java.lang.Class[] { java.lang.Object.class })" +
+					"  .invoke(_bridged, new java.lang.Object[] { $1 });" +
+					"} catch (java.lang.Throwable t) {" +
+					"  t.printStackTrace();" +
+					"}");
+			}
+		}
+		hacker.insertPrivateStaticField("ij.IJ", ImageJ1Bridge.class, "ij1Bridge");
+		hacker.addToClassInitializer("ij.IJ",
+			"ij.IJ.ij1Bridge = new " + DefaultImageJ1Bridge.class.getName() + "();");
+		hacker.insertAtTopOfMethod("ij.IJ",
+			"public static Object runPlugIn(java.lang.String className, java.lang.String arg)",
+			"if (\"" + ImageJ1Bridge.class.getName() + "\".equals($1))"
+			+ " return ij1Bridge;");
 	}
 
 	void setLegacyService(final LegacyService legacyService) {
