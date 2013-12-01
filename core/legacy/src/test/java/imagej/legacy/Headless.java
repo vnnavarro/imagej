@@ -43,6 +43,8 @@ import java.lang.reflect.Method;
 public class Headless {
 	public static void main(String... args) throws Exception {
 		ClassLoader loader = new LegacyClassLoader();
+System.err.println("this class loader: " + Headless.class.getClassLoader());
+System.err.println("legacy class loader: " + loader);
 		LegacyInjector injector = new LegacyInjector();
 		injector.injectHooks(loader, true, null);
 		Class<?> ij = loader.loadClass("ij.IJ");

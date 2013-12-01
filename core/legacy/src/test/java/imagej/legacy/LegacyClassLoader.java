@@ -26,14 +26,17 @@ public class LegacyClassLoader extends URLClassLoader {
 
 	@Override
 	public Class<?> loadClass(final String className) throws ClassNotFoundException {
+if (className.contains("imagej")) { System.err.println(className); }
 		Class<?> result = knownClasses.get(className);
 		if (result != null) {
 			return result;
 		}
 		if (className.startsWith("imagej.legacy.")) {
+System.err.println("defining class " + className);
 			result = defineClass(className);
 			knownClasses.put(className, result);
 			return result;
+		}
 		}
 		return super.loadClass(className);
 	}

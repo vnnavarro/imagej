@@ -51,6 +51,8 @@ public class Mapping<T> {
 
 	private Mapping(Class<T> clazz) {
 		this.clazz = clazz;
+System.err.println("clazz: " + clazz.getName() + " (loader: " + clazz.getClassLoader() + ")");
+System.err.println("ctors: " + java.util.Arrays.toString(clazz.getConstructors()));
 		List<Field> fields = new ArrayList<Field>();
 		for (Field field : clazz.getDeclaredFields()) {
 			if ((field.getModifiers() & (Modifier.FINAL | Modifier.STATIC)) != 0) {
@@ -74,12 +76,17 @@ public class Mapping<T> {
 	private T realMap(Object o) {
 		Field[] otherFields = getFields(o.getClass());
 		try {
+System.err.println("loader: " + clazz.getClassLoader());
 			Constructor<T> ctor = clazz.getConstructor();
 			T result = ctor.newInstance();
+System.err.println("loader2: " + result.getClass().getClassLoader());
 			if (bridgedField != null) {
+System.err.println("bridge: " + o);
 				bridgedField.set(result, o);
 			}
 			for (int i = 0; i < fields.length; i++) {
+System.err.println("setting " + fields[i].getName());
+System.err.println("\tto " + otherFields[i].get(o));
 				fields[i].set(result, otherFields[i].get(o));
 			}
 			return result;

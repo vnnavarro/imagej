@@ -277,6 +277,9 @@ public class CodeHacker {
 	 */
 	public void injectBridgeSupport(final String fullClass) {
 		final CtClass classRef = getClass(fullClass);
+for (CtClass c : handledClasses) {
+	if (c.getName().contains("Processor")) System.err.println("Handle " + c);
+}
 		try {
 			classRef.addField(new CtField(pool.get(Object.class.getName()), "_bridged", classRef));
 			try {
@@ -285,6 +288,7 @@ public class CodeHacker {
 			} catch (NotFoundException e) {
 				final CtConstructor ctor = CtNewConstructor.make(new CtClass[0], new CtClass[0], classRef);
 				ctor.setBody("super();");
+System.err.println("adding " + ctor + " to " + classRef);
 				classRef.addConstructor(ctor);
 			}
 		}
@@ -860,6 +864,9 @@ public class CodeHacker {
 			// ignore
 		}
 
+for (CtClass c : handledClasses) {
+if (c.getName().contains("Processor")) System.err.println("Looking at " + c);
+}
 		final Iterator<CtClass> iter = handledClasses.iterator();
 		while (iter.hasNext()) {
 			final CtClass classRef = iter.next();
