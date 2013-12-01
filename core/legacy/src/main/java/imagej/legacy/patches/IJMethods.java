@@ -32,7 +32,7 @@
 package imagej.legacy.patches;
 
 import ij.IJ;
-import imagej.legacy.LegacyService;
+import imagej.legacy.ImageJ2Bridge;
 
 import java.io.BufferedWriter;
 import java.util.Date;
@@ -48,40 +48,40 @@ public class IJMethods {
 	private static final int PROGRESS_GRANULARITY = 1000;
 
 	/** Appends {@link IJ#showProgress(double)}. */
-	public static void showProgress(final LegacyService legacyService, final double progress) {
-		if (legacyService.isLegacyMode()) return;
+	public static void showProgress(final ImageJ2Bridge bridge, final double progress) {
+		if (bridge.isLegacyMode()) return;
 		// approximate progress as int ratio
 		final int currentIndex = (int) (PROGRESS_GRANULARITY * progress);
 		final int finalIndex = PROGRESS_GRANULARITY;
-		showProgress(legacyService, currentIndex, finalIndex);
+		showProgress(bridge, currentIndex, finalIndex);
 	}
 
 	/** Appends {@link IJ#showProgress(int, int)}. */
 	public static void
-		showProgress(final LegacyService legacyService, final int currentIndex, final int finalIndex)
+		showProgress(final ImageJ2Bridge bridge, final int currentIndex, final int finalIndex)
 	{
-		if (legacyService.isLegacyMode()) return;
-		legacyService.log().debug("showProgress: " + currentIndex + "/" + finalIndex);
+		if (bridge.isLegacyMode()) return;
+		bridge.debug("showProgress: " + currentIndex + "/" + finalIndex);
 		// report progress through global event mechanism
-		legacyService.status().showProgress(currentIndex, finalIndex);
+		bridge.showProgress(currentIndex, finalIndex);
 	}
 
 	/** Appends {@link IJ#showStatus(String)}. */
-	public static void showStatus(final LegacyService legacyService, final String s) {
-		if (legacyService.isLegacyMode()) return;
-		legacyService.log().debug("showStatus: " + s);
-		if (!legacyService.isInitialized()) {
+	public static void showStatus(final ImageJ2Bridge bridge, final String s) {
+		if (bridge.isLegacyMode()) return;
+		bridge.debug("showStatus: " + s);
+		if (!bridge.isInitialized()) {
 			// suppress ImageJ1 bootup messages
 			return;
 		}
 		// report status through global event mechanism
-		legacyService.status().showStatus(s);
+		bridge.showStatus(s);
 	}
 
 	// if the ij.log.file property is set, log every message to the file pointed to
 	private static BufferedWriter logFileWriter;
 
-	public static void log(@SuppressWarnings("unused") final LegacyService legacyService, String message) {
+	public static void log(@SuppressWarnings("unused") final ImageJ2Bridge bridge, String message) {
 		if (message != null) {
 			String logFilePath = System.getProperty("ij.log.file");
 			if (logFilePath != null) {

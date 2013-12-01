@@ -35,7 +35,7 @@ import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.ImageWindow;
 import imagej.legacy.LegacyOutputTracker;
-import imagej.legacy.LegacyService;
+import imagej.legacy.ImageJ2Bridge;
 import imagej.legacy.Utils;
 
 /**
@@ -52,13 +52,13 @@ public final class ImageWindowMethods {
 	}
 
 	/** Replaces {@link ImageWindow#setVisible(boolean)}. */
-	public static void setVisible(final LegacyService legacyService, final ImageWindow obj, final boolean visible) {
-		if (!legacyService.isLegacyMode()) {
-			legacyService.log().debug("ImageWindow.setVisible(" + visible + "): " + obj);
+	public static void setVisible(final ImageJ2Bridge bridge, final ImageWindow obj, final boolean visible) {
+		if (!bridge.isLegacyMode()) {
+			bridge.debug("ImageWindow.setVisible(" + visible + "): " + obj);
 		}
 		if (!visible) return;
-		if (legacyService.isLegacyMode() || Utils.isLegacyThread(Thread.currentThread())) {
-			legacyService.getImageMap().registerLegacyImage(obj.getImagePlus());
+		if (bridge.isLegacyMode() || Utils.isLegacyThread(Thread.currentThread())) {
+			bridge.registerLegacyImage(obj.getImagePlus());
 		}
 		// TODO - not sure this is correct. Does setVisible(true) imply that it
 		// becomes the current window? This arose in fixing a bug with 3d Project
@@ -67,14 +67,14 @@ public final class ImageWindowMethods {
 	}
 
 	/** Replaces {@link ImageWindow#show()}. */
-	public static void show(final LegacyService legacyService, final ImageWindow obj) {
-		if (legacyService.isLegacyMode()) return;
-		setVisible(legacyService, obj, true);
+	public static void show(final ImageJ2Bridge bridge, final ImageWindow obj) {
+		if (bridge.isLegacyMode()) return;
+		setVisible(bridge, obj, true);
 	}
 
 	/** Prepends {@link ImageWindow#close()}. */
-	public static void close(final LegacyService legacyService, final ImageWindow obj) {
-		if (!legacyService.isLegacyMode() && !Utils.isLegacyThread(Thread.currentThread())) return;
+	public static void close(final ImageJ2Bridge bridge, final ImageWindow obj) {
+		if (!bridge.isLegacyMode() && !Utils.isLegacyThread(Thread.currentThread())) return;
 		final ImagePlus imp = obj.getImagePlus();
 		if (imp == null) return;
 		LegacyOutputTracker.addClosed(imp);

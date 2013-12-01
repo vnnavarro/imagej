@@ -319,7 +319,7 @@ public final class DefaultLegacyService extends AbstractService implements
 	public void dispose() {
 		ij1Helper.dispose();
 
-		legacyInjector.setLegacyService(new DummyLegacyService());
+		legacyInjector.setLegacyService(null);
 		instance = null;
 	}
 
@@ -425,5 +425,10 @@ public final class DefaultLegacyService extends AbstractService implements
 		final ArrayList<PluginInfo<?>> plugins = new ArrayList<PluginInfo<?>>();
 		finder.findPlugins(plugins);
 		pluginService.addPlugins(plugins);
+	}
+
+	@Override
+	public ImageJ2Bridge getImageJ2Bridge() {
+		return new LegacyImageJ2Bridge(this);
 	}
 }

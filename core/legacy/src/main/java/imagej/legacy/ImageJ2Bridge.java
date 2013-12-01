@@ -2,7 +2,7 @@
  * #%L
  * ImageJ software for multidimensional image processing and analysis.
  * %%
- * Copyright (C) 2009 - 2014 Board of Regents of the University of
+ * Copyright (C) 2009 - 2013 Board of Regents of the University of
  * Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck
  * Institute of Molecular Cell Biology and Genetics.
  * %%
@@ -26,37 +26,38 @@
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * The views and conclusions contained in the software and documentation are
+ * those of the authors and should not be interpreted as representing official
+ * policies, either expressed or implied, of any organization.
  * #L%
  */
 
-package imagej.legacy.patches;
-
-import ij.ImageJ;
-import imagej.legacy.ImageJ2Bridge;
-
-import java.awt.Point;
+package imagej.legacy;
 
 /**
- * Overrides {@link ImageJ} methods.
+ * Encapsulates of the ImageJ2 functionality used in the patched ImageJ 1.x.
  * 
- * @author Curtis Rueden
+ * @author Johannes Schindelin
  */
-public class ImageJMethods {
+public interface ImageJ2Bridge {
 
-	/** Replaces {@link ImageJ#getLocationOnScreen()}. */
-	public static Point getLocationOnScreen(
-		final ImageJ2Bridge bridge,
-		@SuppressWarnings("unused") final ImageJ obj)
-	{
-		bridge.debug("getLocationOnScreen");
-		// TODO: Return coordinates of modern ImageJ window.
-		return new Point(0, 0);
-	}
+	boolean isLegacyMode();
 
-	/* an old approach
-	public static void quit(final ImageJ2Bridge legSrv, ImageJ ij)
-	{
-		legSrv.getContext().dispose();
-	}
-	*/
+	boolean isInitialized();
+
+	void dispose();
+
+	void showProgress(int currentIndex, int finalIndex);
+
+	void showStatus(String s);
+
+	void registerLegacyImage(Object image);
+
+	void unregisterLegacyImage(Object obj);
+
+	void debug(String string);
+
+	void error(Throwable t);
+
 }

@@ -33,7 +33,7 @@ package imagej.legacy.patches;
 
 import ij.ImagePlus;
 import ij.macro.Functions;
-import imagej.legacy.LegacyService;
+import imagej.legacy.ImageJ2Bridge;
 
 /**
  * Overrides {@link Functions} methods.
@@ -59,7 +59,7 @@ public class FunctionsMethods {
 	}
 
 	/** Prepends {@link ij.macro.Functions#displayBatchModeImage(ImagePlus)}. */
-	public static void displayBatchModeImageBefore(@SuppressWarnings("unused") final LegacyService legacyService,
+	public static void displayBatchModeImageBefore(@SuppressWarnings("unused") final ImageJ2Bridge bridge,
 		@SuppressWarnings("unused") final ImagePlus imp2)
 	{
 		// NOTE - BDZ - removing for now - see if any problems rear their head.
@@ -68,7 +68,7 @@ public class FunctionsMethods {
 	}
 
 	/** Appends {@link ij.macro.Functions#displayBatchModeImage(ImagePlus)}. */
-	public static void displayBatchModeImageAfter(@SuppressWarnings("unused") final LegacyService legacyService,
+	public static void displayBatchModeImageAfter(@SuppressWarnings("unused") final ImageJ2Bridge bridge,
 		@SuppressWarnings("unused") final ImagePlus imp2)
 	{
 		// NOTE - BDZ - removing for now - see if any problems rear their head.

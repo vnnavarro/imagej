@@ -113,10 +113,14 @@ public class CodeHacker {
 		// the CodeHacker offers the LegacyService instance, therefore it needs to
 		// add that field here
 		if (!hasField("ij.IJ", "_legacyService")) {
-			insertPrivateStaticField("ij.IJ", LegacyService.class, "_legacyService");
+			insertPrivateStaticField("ij.IJ", Object.class, "_legacyService");
 			insertNewMethod("ij.IJ",
-				"public static imagej.legacy.LegacyService getLegacyService()",
+				"public static java.lang.Object getLegacyService()",
 				"return _legacyService;");
+		}
+
+		if (!hasField("ij.IJ", "_ij2")) {
+			insertPublicStaticField("ij.IJ", ImageJ2Bridge.class, "_ij2", null);
 		}
 
 		onlyLogExceptions = !LegacyExtensions.stackTraceContains("junit.");
@@ -932,7 +936,7 @@ public class CodeHacker {
 				if ((method.getModifiers() & Modifier.STATIC) == 0) continue;
 				final CtClass[] types = method.getParameterTypes();
 				if (types.length == 0 ||
-					!types[0].getName().equals("imagej.legacy.LegacyService"))
+					!types[0].getName().equals(ImageJ2Bridge.class.getName()))
 				{
 					throw new UnsupportedOperationException("Method " + method +
 						" of class " + patchClass + " has wrong type!");
@@ -945,7 +949,7 @@ public class CodeHacker {
 		final StringBuilder newCode =
 			new StringBuilder((isVoid ? "" : "return ") + patchClass + "." +
 				methodName + "(");
-		newCode.append("$service");
+		newCode.append("$bridge");
 		if (!isStatic) {
 			newCode.append(", this");
 		}
@@ -958,10 +962,10 @@ public class CodeHacker {
 		return newCode.toString();
 	}
 
-	/** Patches in the current legacy service for '$service' */
+	/** Patches in the current legacy service for '$bridge' */
 	private String expand(final String code) {
-		return code.replace("$isLegacyMode()", "$service.isLegacyMode()").replace(
-			"$service", "ij.IJ.getLegacyService()");
+		return code.replace("$isLegacyMode()", "($bridge.isLegacyMode())").replace(
+			"$bridge", "((" + ImageJ2Bridge.class.getName() + ")ij.IJ._ij2)");
 	}
 
 	/** Extracts the method name from the given method signature. */
@@ -1500,14 +1504,20 @@ public class CodeHacker {
 	 * @param forceHeadless also apply the headless patches
 	 */
 	@SuppressWarnings("unused")
-	private static void patch(final boolean forceHeadless) {
+	private static void patch(final boolean forceHeadless, final ImageJ2Bridge bridge) {
 		final ClassLoader loader = CodeHacker.class.getClassLoader();
 		final CodeHacker hacker = new CodeHacker(loader, new ClassPool(false));
-		if (forceHeadless) {
-			new LegacyHeadless(hacker).patch();
+		new LegacyInjector().injectHooks(hacker, forceHeadless, bridge);
+	}
+
+	public void setBridge(ImageJ2Bridge bridge) {
+		if (bridge == null) bridge = new DummyImageJ2Bridge();
+		try {
+			classLoader.loadClass("ij.IJ").getField("_ij2").set(null, bridge);
 		}
-		new LegacyInjector().injectHooks(hacker);
-		hacker.loadClasses();
+		catch (Throwable t) {
+			t.printStackTrace();
+		}
 	}
 
 }

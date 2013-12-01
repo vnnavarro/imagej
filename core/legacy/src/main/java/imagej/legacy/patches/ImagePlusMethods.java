@@ -33,9 +33,8 @@ package imagej.legacy.patches;
 
 import ij.ImagePlus;
 import ij.WindowManager;
-import imagej.data.display.ImageDisplay;
+import imagej.legacy.ImageJ2Bridge;
 import imagej.legacy.LegacyOutputTracker;
-import imagej.legacy.LegacyService;
 import imagej.legacy.Utils;
 
 /**
@@ -51,16 +50,16 @@ public final class ImagePlusMethods {
 	}
 
 	/** Appends {@link ImagePlus#updateAndDraw()}. */
-	public static void updateAndDraw(final LegacyService legacyService, final ImagePlus obj) {
+	public static void updateAndDraw(final ImageJ2Bridge bridge, final ImagePlus obj) {
 		if (obj == null) return;
 		if (!obj.isProcessor()) return;
 		if (obj.getWindow() == null) return;
-		if (!legacyService.isLegacyMode()) {
+		if (!bridge.isLegacyMode()) {
 			if (!Utils.isLegacyThread(Thread.currentThread())) return;
-			legacyService.log().debug("ImagePlus.updateAndDraw(): " + obj);
+			bridge.debug("ImagePlus.updateAndDraw(): " + obj);
 		}
 		try {
-			legacyService.getImageMap().registerLegacyImage(obj);
+			bridge.registerLegacyImage(obj);
 		} catch (UnsupportedOperationException e) {
 			// ignore: the dummy legacy service does not have an image map
 		}
@@ -69,15 +68,15 @@ public final class ImagePlusMethods {
 	}
 
 	/** Appends {@link ImagePlus#repaintWindow()}. */
-	public static void repaintWindow(final LegacyService legacyService, final ImagePlus obj) {
+	public static void repaintWindow(final ImageJ2Bridge bridge, final ImagePlus obj) {
 		if (obj == null) return;
 		if (obj.getWindow() == null) return;
-		if (!legacyService.isLegacyMode()) {
+		if (!bridge.isLegacyMode()) {
 			if (!Utils.isLegacyThread(Thread.currentThread())) return;
-			legacyService.log().debug("ImagePlus.repaintWindow(): " + obj);
+			bridge.debug("ImagePlus.repaintWindow(): " + obj);
 		}
 		try {
-			legacyService.getImageMap().registerLegacyImage(obj);
+			bridge.registerLegacyImage(obj);
 		} catch (UnsupportedOperationException e) {
 			// ignore: the dummy legacy service does not have an image map
 		}
@@ -86,16 +85,16 @@ public final class ImagePlusMethods {
 	}
 
 	/** Appends {@link ImagePlus#show(String message)}. */
-	public static void show(final LegacyService legacyService, final ImagePlus obj,
+	public static void show(final ImageJ2Bridge bridge, final ImagePlus obj,
 		@SuppressWarnings("unused") final String message)
 	{
 		if (obj == null) return;
-		if (!legacyService.isLegacyMode()) {
+		if (!bridge.isLegacyMode()) {
 			if (!Utils.isLegacyThread(Thread.currentThread())) return;
-			legacyService.log().debug("ImagePlus.show(): " + obj);
+			bridge.debug("ImagePlus.show(): " + obj);
 		}
 		try {
-			legacyService.getImageMap().registerLegacyImage(obj);
+			bridge.registerLegacyImage(obj);
 		} catch (UnsupportedOperationException e) {
 			// ignore: the dummy legacy service does not have an image map
 		}
@@ -103,24 +102,18 @@ public final class ImagePlusMethods {
 	}
 
 	/** Appends {@link ImagePlus#hide()}. */
-	public static void hide(final LegacyService legacyService, final ImagePlus obj) {
-		if (legacyService.isLegacyMode()) return;
+	public static void hide(final ImageJ2Bridge bridge, final ImagePlus obj) {
+		if (bridge.isLegacyMode()) return;
 		if (obj == null) return;
-		if (!legacyService.isLegacyMode() && !Utils.isLegacyThread(Thread.currentThread())) return;
-		legacyService.log().debug("ImagePlus.hide(): " + obj);
+		if (!bridge.isLegacyMode() && !Utils.isLegacyThread(Thread.currentThread())) return;
+		bridge.debug("ImagePlus.hide(): " + obj);
 		LegacyOutputTracker.removeOutput(obj);
 		// Original method
 		//LegacyOutputTracker.getClosedImps().add(obj);
 		// Alternate method
 		// begin alternate
 		try {
-			ImageDisplay disp = legacyService.getImageMap().lookupDisplay(obj);
-			if (disp == null) {
-				legacyService.getImageMap().unregisterLegacyImage(obj);
-			}
-			else {
-				disp.close();
-			}
+				bridge.unregisterLegacyImage(obj);
 		} catch (UnsupportedOperationException e) {
 			// ignore: the dummy legacy service does not have an image map
 		}
@@ -129,9 +122,9 @@ public final class ImagePlusMethods {
 
 	/** Appends {@link ImagePlus#close()}. */
 	// TODO: LegacyOutputTracker should not be a singleton
-	public static void close(final LegacyService legacyService, final ImagePlus obj) {
+	public static void close(final ImageJ2Bridge bridge, final ImagePlus obj) {
 		if (obj == null) return;
-		if (!legacyService.isLegacyMode() && !Utils.isLegacyThread(Thread.currentThread())) return;
+		if (!bridge.isLegacyMode() && !Utils.isLegacyThread(Thread.currentThread())) return;
 		LegacyOutputTracker.addClosed(obj);
 	}
 }

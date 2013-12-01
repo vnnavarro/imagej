@@ -101,4 +101,6 @@ public interface LegacyService extends ImageJService {
 	/** Gets the version of ImageJ 1.x being used. */
 	String getLegacyVersion();
 
+	ImageJ2Bridge getImageJ2Bridge();
+
 }

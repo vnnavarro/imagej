@@ -32,7 +32,7 @@
 package imagej.legacy.patches;
 
 import ij.io.PluginClassLoader;
-import imagej.legacy.LegacyService;
+import imagej.legacy.ImageJ2Bridge;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -40,9 +40,6 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-
-import org.scijava.log.LogService;
-import org.scijava.log.StderrLogService;
 
 /**
  * Augments {@link PluginClassLoader} methods.
@@ -58,21 +55,17 @@ public final class PluginClassLoaderMethods {
 		// prevent instantiation of utility class
 	}
 
-	private static LogService getLogService(final LegacyService legacyService) {
-		return legacyService != null ? legacyService.log() : new StderrLogService();
-	}
-
 	private static Method addURLMethod;
 
-	private static void addURL(final LegacyService legacyService, final PluginClassLoader loader, final URL url) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
+	private static void addURL(final ImageJ2Bridge bridge, final PluginClassLoader loader, final URL url) throws IllegalArgumentException, IllegalAccessException, InvocationTargetException {
 		synchronized(PluginClassLoaderMethods.class) {
 			if (addURLMethod == null) {
 				try {
 					addURLMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
 				} catch (SecurityException e) {
-					getLogService(legacyService).error(e);
+					bridge.error(e);
 				} catch (NoSuchMethodException e) {
-					getLogService(legacyService).error(e);
+					bridge.error(e);
 				}
 				addURLMethod.setAccessible(true);
 			}
@@ -81,34 +74,34 @@ public final class PluginClassLoaderMethods {
 	}
 
 	/** Appends {@link PluginClassLoader#init(String)}. */
-	public static void init(final LegacyService legacyService, final PluginClassLoader obj, final String path) {
+	public static void init(final ImageJ2Bridge bridge, final PluginClassLoader obj, final String path) {
 		final File pluginsDirectory = new File(path);
 		if (!pluginsDirectory.getName().equals("plugins")) return;
 		final File ij1Directory = pluginsDirectory.getParentFile();
-		if (ij1Directory != null) addJars(legacyService, obj, new File(ij1Directory, "jars"));
+		if (ij1Directory != null) addJars(bridge, obj, new File(ij1Directory, "jars"));
 	}
 
-	protected static void addJars(final LegacyService legacyService, final PluginClassLoader obj, final File directory) {
+	protected static void addJars(final ImageJ2Bridge bridge, final PluginClassLoader obj, final File directory) {
 		final File[] list = directory.listFiles();
 		if (list == null) return;
 		for (final File file : list) {
-			if (file.isDirectory()) addJars(legacyService, obj, file);
-			else if (file.getName().endsWith(".jar")) addJar(legacyService, obj, file);
+			if (file.isDirectory()) addJars(bridge, obj, file);
+			else if (file.getName().endsWith(".jar")) addJar(bridge, obj, file);
 		}
 	}
 
-	protected static void addJar(final LegacyService legacyService, final PluginClassLoader obj, final File jar) {
+	protected static void addJar(final ImageJ2Bridge bridge, final PluginClassLoader obj, final File jar) {
 		try {
-			addURL(legacyService, obj, jar.toURI().toURL());
+			addURL(bridge, obj, jar.toURI().toURL());
 		} catch (IllegalArgumentException e) {
-			legacyService.log().error(e);
+			bridge.error(e);
 		} catch (MalformedURLException e) {
-			legacyService.log().error(e);
+			bridge.error(e);
 		} catch (IllegalAccessException e) {
-			legacyService.log().error(e);
+			bridge.error(e);
 		} catch (InvocationTargetException e) {
-			legacyService.log().error(e);
-			legacyService.log().error(e.getCause());
+			bridge.error(e);
+			bridge.error(e.getCause());
 		}
 	}
 }

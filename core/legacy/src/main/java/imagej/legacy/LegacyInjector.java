@@ -49,15 +49,20 @@ public class LegacyInjector {
 
 	/** Overrides class behavior of ImageJ1 classes by injecting method hooks. */
 	public void injectHooks(final ClassLoader classLoader) {
-		hacker = new CodeHacker(classLoader);
-		injectHooks(hacker);
+		injectHooks(classLoader, GraphicsEnvironment.isHeadless(), null);
 	}
 
 	/** Overrides class behavior of ImageJ1 classes by injecting method hooks. */
-	protected void injectHooks(final CodeHacker hacker) {
+	public void injectHooks(final ClassLoader classLoader, boolean headless, ImageJ2Bridge bridge) {
+		hacker = new CodeHacker(classLoader);
+		injectHooks(hacker, headless, bridge);
+	}
+
+	/** Overrides class behavior of ImageJ1 classes by injecting method hooks. */
+	protected void injectHooks(final CodeHacker hacker, boolean headless, ImageJ2Bridge bridge) {
 		// NB: Override class behavior before class loading gets too far along.
 
-		if (GraphicsEnvironment.isHeadless()) {
+		if (headless) {
 			new LegacyHeadless(hacker).patch();
 		}
 
@@ -68,7 +73,7 @@ public class LegacyInjector {
 			"public java.awt.Point getLocationOnScreen()",
 			"if ($isLegacyMode()) return super.getLocationOnScreen();");
 		hacker.insertAtTopOfMethod("ij.ImageJ", "public void quit()",
-			"if (!($service instanceof imagej.legacy.DummyLegacyService)) $service.getContext().dispose();"
+			"$bridge.dispose();"
 			+ "if (!$isLegacyMode()) return;");
 
 		// override behavior of ij.IJ
@@ -78,11 +83,10 @@ public class LegacyInjector {
 			"public static void showProgress(int currentIndex, int finalIndex)");
 		hacker.insertAtBottomOfMethod("ij.IJ",
 			"public static void showStatus(java.lang.String s)");
-		hacker.insertPrivateStaticField("ij.IJ", Context.class, "_context");
+		hacker.insertPrivateStaticField("ij.IJ", Object.class, "_context");
 		hacker.insertNewMethod("ij.IJ",
-			"public synchronized static org.scijava.Context getContext()",
-			"if (_context == null) _context = new org.scijava.Context();"
-			+ "return _context;");
+			"public synchronized static java.lang.Object getContext()",
+			"return _context;");
 		hacker.insertAtTopOfMethod("ij.IJ",
 				"public static Object runPlugIn(java.lang.String className, java.lang.String arg)",
 				"if (\"" + LegacyService.class.getName() + "\".equals($1))"
@@ -125,11 +129,11 @@ public class LegacyInjector {
 		hacker
 			.insertAtTopOfMethod("ij.macro.Functions",
 				"void displayBatchModeImage(ij.ImagePlus imp2)",
-				"imagej.legacy.patches.FunctionsMethods.displayBatchModeImageBefore($service, $1);");
+				"imagej.legacy.patches.FunctionsMethods.displayBatchModeImageBefore($bridge, $1);");
 		hacker
 			.insertAtBottomOfMethod("ij.macro.Functions",
 				"void displayBatchModeImage(ij.ImagePlus imp2)",
-				"imagej.legacy.patches.FunctionsMethods.displayBatchModeImageAfter($service, $1);");
+				"imagej.legacy.patches.FunctionsMethods.displayBatchModeImageAfter($bridge, $1);");
 
 		// override behavior of MacAdapter, if needed
 		if (ClassUtils.hasClass("com.apple.eawt.ApplicationListener")) {
@@ -152,21 +156,14 @@ public class LegacyInjector {
 		// commit patches
 		hacker.loadClasses();
 
-		// make sure that there is a legacy service
-		if (this.hacker != null) {
-			setLegacyService(new DummyLegacyService());
-		}
+		// make sure that there is a bridge
+		hacker.setBridge(bridge);
 	}
 
 	void setLegacyService(final LegacyService legacyService) {
-		Context context;
-		try {
-			context = legacyService.getContext();
-		} catch (UnsupportedOperationException e) {
-			// DummyLegacyService does not have a context
-			context = null;
-		}
+		hacker.setBridge(legacyService == null ? null : legacyService.getImageJ2Bridge());
 
+		Context context = legacyService == null ? null : legacyService.getContext();
 		try {
 			final Class<?> ij = hacker.classLoader.loadClass("ij.IJ");
 			Field field = ij.getDeclaredField("_legacyService");

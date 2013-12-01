@@ -259,10 +259,11 @@ public class LegacyTestUtils {
 			 * with another class loader than the URLClassLoader we just created.
 			 */
 			try {
+				final Class<?> bridgeClass = loader.loadClass(ImageJ2Bridge.class.getName());
 				final Class<?> hackerClass = loader.loadClass(CodeHacker.class.getName());
-				final Method patchMethod = hackerClass.getDeclaredMethod("patch", Boolean.TYPE);
+				final Method patchMethod = hackerClass.getDeclaredMethod("patch", Boolean.TYPE, bridgeClass);
 				patchMethod.setAccessible(true);
-				patchMethod.invoke(null, patchHeadless);
+				patchMethod.invoke(null, patchHeadless, null);
 			} catch (Exception e) {
 				throw new IllegalArgumentException(e);
 			}
