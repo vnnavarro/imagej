@@ -21,6 +21,7 @@
 		<module>javascript</module>
 		<module>jruby</module>
 		<module>jython</module>
+		<module>r</module>
 	</modules>
 
 	<properties>
